@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}MatchDay AI &mdash; Fan Assistant{% endblock %}
+{% block main_class %}main-content-wide{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="kicker mono">FIFA WORLD CUP 2026 &middot; GENAI CHALLENGE</div>
+    <h1 class="display">Every fan finds<br />their way, in any language.</h1>
+    <p>Directions, accessibility plans, and transport advice &mdash; drafted in seconds, for every gate and every guest.</p>
+    <div class="clock-strip mono">
+      <span>KICKOFF IN <b id="hero-clock">&mdash;</b></span>
+      <span>GATES OPEN <b>17:00</b></span>
+      <span>LANGUAGES <b>8</b></span>
+    </div>
+  </div>
+
+  <div class="status-card">
+    <div class="status-head">
+      <div class="status-title">Gate Status Now</div>
+      <div class="live-tag mono"><span class="pulse" aria-hidden="true"></span>LIVE</div>
+    </div>
+    <p class="status-sub">Tap a gate to set it as your destination below.</p>
+    <svg id="mini-map" viewBox="0 0 300 170" width="100%" height="150" role="img" aria-label="Live gate occupancy map"></svg>
+    <div class="status-legend">
+      <span><i style="background:var(--pitch)" aria-hidden="true"></i>Low</span>
+      <span><i style="background:var(--gold)" aria-hidden="true"></i>Moderate</span>
+      <span><i style="background:var(--coral)" aria-hidden="true"></i>Busy</span>
+    </div>
+  </div>
+</section>
+
+<div class="concourse">
+
+<section class="gate" data-accent="pitch" aria-labelledby="wayfinding-heading">
+  <div class="gate-head">
+    <div class="gate-num" aria-hidden="true">G1</div>
+    <div>
+      <h1 id="wayfinding-heading" class="gate-title">Multilingual Wayfinding</h1>
+      <p class="gate-desc">Get step-by-step directions to any gate, section, or facility in your language.</p>
+    </div>
+  </div>
+  <form id="wayfinding-form" class="gate-body" novalidate>
+    <div class="field-row">
+      <div class="field">
+        <label for="start_node_id">I am at</label>
+        <select id="start_node_id" name="start_node_id" required>
+          <option value="">Select a starting point&hellip;</option>
+          <optgroup label="Gates">
+            {% for gate in gates %}
+            <option value="{{ gate.id }}">{{ gate.name }}</option>
+            {% endfor %}
+          </optgroup>
+        </select>
+      </div>
+      <div class="connector" aria-hidden="true">&rarr;</div>
+      <div class="field">
+        <label for="target_node_id">I want to go to</label>
+        <select id="target_node_id" name="target_node_id" required>
+          <option value="">Select a destination&hellip;</option>
+          <optgroup label="Gates">
+            {% for gate in gates %}
+            <option value="{{ gate.id }}">{{ gate.name }}</option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Sections">
+            {% for section in sections %}
+            <option value="{{ section.id }}">{{ section.name }}</option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Facilities">
+            {% for facility in facilities %}
+            <option value="{{ facility.id }}">{{ facility.name }}</option>
+            {% endfor %}
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="language">Language</label>
+        <select id="language" name="language">
+          <option value="en">English</option>
+          <option value="es">Espa&ntilde;ol</option>
+          <option value="fr">Fran&ccedil;ais</option>
+          <option value="pt">Portugu&ecirc;s</option>
+          <option value="ar">&#1575;&#1604;&#1593;&#1585;&#1576;&#1610;&#1577;</option>
+          <option value="de">Deutsch</option>
+          <option value="ja">&#26085;&#26412;&#8213;</option>
+          <option value="zh">&#20013;&#25991;</option>
+        </select>
+      </div>
+      <div class="field field-center">
+        <label class="checkline" for="require_step_free">
+          <input type="checkbox" id="require_step_free" name="require_step_free" />
+          Step-free route only
+        </label>
+      </div>
+    </div>
+    <button type="submit" class="btn pitch">Get Directions</button>
+    <p class="btn-note">We'll generate turn-by-turn directions in a few seconds.</p>
+  </form>
+  <div id="wayfinding-status" class="status-region" aria-live="polite"></div>
+  <div id="wayfinding-result" class="result" aria-live="polite">
+    <div class="result-title" id="wayfinding-result-title">Route Preview</div>
+    <div class="route-meta">
+      <span>DISTANCE <b id="wayfinding-dist">&mdash;</b></span>
+      <span>WALK TIME <b id="wayfinding-time">&mdash;</b></span>
+    </div>
+    <ol class="steps" id="wayfinding-steps"></ol>
+    <p class="ai-note" id="wayfinding-directions"></p>
+  </div>
+</section>
+
+<section class="gate" data-accent="gold" aria-labelledby="accessibility-heading">
+  <div class="gate-head">
+    <div class="gate-num" aria-hidden="true">G2</div>
+    <div>
+      <h1 id="accessibility-heading" class="gate-title">Accessibility Concierge</h1>
+      <p class="gate-desc">Tell us your access need and where you're headed — we'll draft a clear accommodation plan.</p>
+    </div>
+  </div>
+  <form id="accessibility-form" class="gate-body" novalidate>
+    <fieldset>
+      <legend>What type of accommodation do you need?</legend>
+      <div class="radiogrid">
+        <label class="radiopill">
+          <input type="radio" id="need_wheelchair" name="need_type" value="wheelchair" checked />
+          Wheelchair / mobility
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="need_hearing" name="need_type" value="hearing" />
+          Hearing
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="need_visual" name="need_type" value="visual" />
+          Visual
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="need_cognitive" name="need_type" value="cognitive" />
+          Cognitive / sensory-friendly
+        </label>
+      </div>
+    </fieldset>
+    <div class="field-row">
+      <div class="field">
+        <label for="acc_target_node_id">Destination</label>
+        <select id="acc_target_node_id" name="target_node_id" required>
+          <option value="">Select a destination&hellip;</option>
+          {% for section in sections %}
+          <option value="{{ section.id }}">{{ section.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="acc_language">Language</label>
+        <select id="acc_language" name="language">
+          <option value="en">English</option>
+          <option value="es">Espa&ntilde;ol</option>
+          <option value="fr">Fran&ccedil;ais</option>
+          <option value="pt">Portugu&ecirc;s</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="acc_notes">Additional notes (optional)</label>
+      <textarea id="acc_notes" name="notes" maxlength="500" rows="3" placeholder="Anything staff should know before you arrive&hellip;"></textarea>
+    </div>
+    <button type="submit" class="btn gold">Request Accommodation Plan</button>
+    <p class="btn-note">We'll draft this in a few seconds.</p>
+  </form>
+  <div id="accessibility-status" class="status-region" aria-live="polite"></div>
+  <div id="accessibility-result" class="result" aria-live="polite">
+    <div class="result-title">Accommodation Plan</div>
+    <div class="ticket">
+      <div class="ticket-qr" aria-hidden="true"></div>
+      <div>
+        <div class="ticket-ref" id="accessibility-ref">REF &mdash;</div>
+        <div class="ticket-line" id="accessibility-plan"></div>
+        <div class="ticket-line" id="accessibility-meet"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="gate" data-accent="coral" aria-labelledby="transport-heading">
+  <div class="gate-head">
+    <div class="gate-num" aria-hidden="true">G3</div>
+    <div>
+      <h1 id="transport-heading" class="gate-title">Getting Here</h1>
+      <p class="gate-desc">A quick, sustainable suggestion for reaching the stadium on match day.</p>
+    </div>
+  </div>
+  <form id="transport-form" class="gate-body" novalidate>
+    <div class="field">
+      <label for="distance_km">Distance from the stadium (km)</label>
+      <input type="number" id="distance_km" name="distance_km" min="0.1" max="500" step="0.1" required inputmode="decimal" placeholder="e.g. 8.5" />
+    </div>
+    <button type="submit" class="btn coral">Suggest My Best Option</button>
+    <p class="btn-note">A quick, sustainable suggestion &mdash; ready in seconds.</p>
+  </form>
+  <div id="transport-status" class="status-region" aria-live="polite"></div>
+  <div id="transport-result" class="result" aria-live="polite">
+    <div class="result-title">Suggested Option</div>
+    <div class="modecards" id="transport-cards"></div>
+  </div>
+</section>
+
+<section class="gate" data-accent="pitch" aria-labelledby="sustainability-heading">
+  <div class="gate-head">
+    <div class="gate-num" aria-hidden="true">G4</div>
+    <div>
+      <h1 id="sustainability-heading" class="gate-title">Sustainability Advisor</h1>
+      <p class="gate-desc">Compare arrival options and get a friendly nudge toward the lower-impact choice.</p>
+    </div>
+  </div>
+  <form id="sustainability-form" class="gate-body" novalidate>
+    <div class="field">
+      <label for="sustainability_start_node_id">Starting point</label>
+      <select id="sustainability_start_node_id" name="start_node_id" required>
+        <option value="">Select a starting point&hellip;</option>
+        <optgroup label="Gates">
+          {% for gate in gates %}
+          <option value="{{ gate.id }}">{{ gate.name }}</option>
+          {% endfor %}
+        </optgroup>
+      </select>
+    </div>
+    <fieldset>
+      <legend>How are you planning to get here?</legend>
+      <div class="radiogrid">
+        <label class="radiopill">
+          <input type="radio" id="mode_walk_bike" name="mode" value="walk_bike" checked />
+          Walk / Bike
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="mode_public_transit" name="mode" value="public_transit" />
+          Public transit
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="mode_rideshare" name="mode" value="rideshare" />
+          Rideshare / Taxi
+        </label>
+        <label class="radiopill">
+          <input type="radio" id="mode_personal_car" name="mode" value="personal_car" />
+          Personal car
+        </label>
+      </div>
+    </fieldset>
+    <button type="submit" class="btn pitch">Compare Options</button>
+    <p class="btn-note">We'll compare your options in a few seconds.</p>
+  </form>
+  <div id="sustainability-status" class="status-region" aria-live="polite"></div>
+  <div id="sustainability-result" class="result" aria-live="polite">
+    <div class="result-title">Relative Impact</div>
+    <div class="co2bars" id="sustainability-bars"></div>
+    <div class="impact-badge" id="sustainability-badge"></div>
+  </div>
+</section>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/gate-status.js" defer></script>
+<script src="/static/js/wayfinding.js" defer></script>
+<script src="/static/js/accessibility.js" defer></script>
+<script src="/static/js/transport.js" defer></script>
+<script src="/static/js/sustainability.js" defer></script>
+{% endblock %}

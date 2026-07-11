@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}MatchDay AI &mdash; Staff Dashboard{% endblock %}
+{% block main_class %}main-content-wide{% endblock %}
+{% block content %}
+
+<div class="console">
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Total Inside</div>
+      <div class="kpi-value mono" id="kpi-total">&mdash;</div>
+      <div class="kpi-sub mono" id="kpi-total-sub">of &mdash; capacity</div>
+    </div>
+    <div class="kpi" id="kpi-avg-card">
+      <div class="kpi-label">Average Gate Fill</div>
+      <div class="kpi-value mono" id="kpi-avg">&mdash;</div>
+      <div class="kpi-sub">across {{ gates|length }} gates</div>
+    </div>
+    <div class="kpi" id="kpi-risk-card">
+      <div class="kpi-label">Gates At Risk</div>
+      <div class="kpi-value mono" id="kpi-risk">&mdash;</div>
+      <div class="kpi-sub">&ge; 85% capacity</div>
+    </div>
+    <div class="kpi" id="kpi-peak-card">
+      <div class="kpi-label">Peak Gate</div>
+      <div class="kpi-value mono" id="kpi-peak">&mdash;</div>
+      <div class="kpi-sub" id="kpi-peak-sub">gathering data&hellip;</div>
+    </div>
+  </div>
+
+  <div class="maingrid">
+
+    <section class="panel" aria-labelledby="map-heading">
+      <div class="panel-head">
+        <div class="panel-icon" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+        </div>
+        <div>
+          <h1 id="map-heading" class="panel-title">Stadium Map</h1>
+          <p class="panel-sub">Live position and load of every gate around the concourse.</p>
+        </div>
+        <div class="live-tag mono" aria-hidden="true"><span class="pulse"></span>LIVE</div>
+      </div>
+      <div class="map-body">
+        <svg id="stadium-map" viewBox="0 0 400 252" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Stadium map showing live occupancy per gate by compass direction. Exact figures are in the Gate Manifest table below."></svg>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="feed-heading">
+      <div class="panel-head">
+        <div class="panel-icon coral" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2L12 3zM12 9v5M12 17h.01"/></svg>
+        </div>
+        <div>
+          <h1 id="feed-heading" class="panel-title">Operations Feed</h1>
+          <p class="panel-sub">AI-suggested actions when a gate crosses 85% capacity.</p>
+        </div>
+      </div>
+      <div id="alerts-list" class="feed" aria-live="polite">
+        <div class="no-alert">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>No active alerts</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="panel" aria-labelledby="occupancy-heading">
+    <div class="panel-head">
+      <div class="panel-icon" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      </div>
+      <div>
+        <h1 id="occupancy-heading" class="panel-title">Gate Manifest</h1>
+        <p class="panel-sub">Occupancy, capacity, and recent trend per gate.</p>
+      </div>
+    </div>
+    <table id="occupancy-table">
+      <caption class="sr-only">Current occupancy per gate, with capacity, percent full, and recent trend</caption>
+      <thead>
+        <tr>
+          <th scope="col">Gate</th>
+          <th scope="col">Occupancy</th>
+          <th scope="col">Capacity</th>
+          <th scope="col">% Full</th>
+          <th scope="col">Trend</th>
+        </tr>
+      </thead>
+      <tbody id="occupancy-tbody">
+        {% for gate in gates %}
+        <tr data-gate-id="{{ gate.id }}" data-direction="{{ gate.direction }}">
+          <th scope="row">{{ gate.name }}</th>
+          <td class="occ-value">&mdash;</td>
+          <td class="cap-value">&mdash;</td>
+          <td class="pct-cell">
+            <div class="segbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="{{ gate.name }} occupancy">
+              {% for _ in range(10) %}<i></i>{% endfor %}
+            </div>
+            <span class="pct-value">&mdash;</span>
+          </td>
+          <td class="spark-cell" aria-hidden="true"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="panel-foot">
+      <button id="advance-tick" type="button" class="btn btn-secondary">Advance Simulation</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="trend-heading">
+    <div class="panel-head">
+      <div class="panel-icon gold" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-9"/></svg>
+      </div>
+      <div>
+        <h1 id="trend-heading" class="panel-title">Occupancy Trend</h1>
+        <p class="panel-sub">Recent occupancy per gate. Exact figures are in the manifest above.</p>
+      </div>
+    </div>
+    <div id="trend-chart" class="chart-wrap"></div>
+  </section>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/dashboard.js" defer></script>
+{% endblock %}

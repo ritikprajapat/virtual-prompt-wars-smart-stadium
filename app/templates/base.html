@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}MatchDay AI{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <nav class="site-header">
+    <a class="wordmark" href="/">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="display">MatchDay AI</span>
+    </a>
+    <div class="navlinks">
+      <a href="/" {% if request.url.path == "/" %}class="active" aria-current="page"{% endif %}>Fan Assistant</a>
+      <a href="/dashboard" {% if request.url.path == "/dashboard" %}class="active" aria-current="page"{% endif %}>Staff Dashboard</a>
+    </div>
+    <div class="pitchline" aria-hidden="true"></div>
+  </nav>
+  <main id="main-content" class="main-content {% block main_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

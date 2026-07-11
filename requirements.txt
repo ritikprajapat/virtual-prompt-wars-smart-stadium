@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+jinja2
+pydantic-settings
+google-genai
+slowapi
+python-dotenv
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+playwright
+axe-core-python
