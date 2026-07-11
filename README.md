@@ -212,7 +212,7 @@ to the real API — is at 100%.
 4. Deploy, then confirm all core flows (wayfinding, accessibility concierge, getting here,
    sustainability advisor, staff dashboard) work end-to-end on the live URL before demo/judging.
 
-Live URL: _add after deploying_
+Live URL: [smart-stadium.up.railway.app](https://smart-stadium.up.railway.app/)
 
 ## Project layout
 
