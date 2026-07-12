@@ -12,11 +12,15 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
     rate_limit_per_minute: int = Field(default=20, alias="RATE_LIMIT_PER_MINUTE")
-    allowed_origins: str = Field(default="http://localhost:8000", alias="ALLOWED_ORIGINS")
+    allowed_origins: str = Field(
+        default="http://localhost:8000", alias="ALLOWED_ORIGINS"
+    )
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        """Parse the comma-separated ``allowed_origins`` string into a clean list."""
+        origins = self.allowed_origins.split(",")  # pylint: disable=no-member
+        return [origin.strip() for origin in origins if origin.strip()]
 
 
 @lru_cache

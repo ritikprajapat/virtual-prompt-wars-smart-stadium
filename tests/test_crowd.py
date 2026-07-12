@@ -1,8 +1,9 @@
+import asyncio
 import random
 
 import pytest
 
-from app.services.crowd import ALERT_THRESHOLD, CrowdSimulator
+from app.services.crowd import ALERT_THRESHOLD, CrowdSimulator, GateState
 
 
 @pytest.mark.asyncio
@@ -105,6 +106,40 @@ async def test_alert_clears_once_gate_drops_below_threshold(monkeypatch):
     gate.occupancy = 0
     await sim.tick(rng=_StayFlat())
     assert sim.active_alerts() == []
+
+
+def test_pre_seeded_gates_are_left_untouched():
+    # When gates are supplied, __post_init__ must not overwrite them from venue.json.
+    seeded = {"g1": GateState(gate_id="g1", name="Custom Gate", capacity=100)}
+    sim = CrowdSimulator(gates=seeded)
+    assert sim.gates is seeded
+    assert list(sim.gates) == ["g1"]
+
+
+def test_occupancy_pct_is_zero_when_capacity_is_zero():
+    gate = GateState(gate_id="g", name="G", capacity=0, occupancy=5)
+    assert gate.occupancy_pct == 0.0
+
+
+@pytest.mark.asyncio
+async def test_background_loop_start_is_idempotent_and_stops_cleanly():
+    sim = CrowdSimulator(gates={"g": GateState(gate_id="g", name="G", capacity=10)})
+
+    # Stopping when nothing is running is a no-op.
+    sim.stop_background_loop()
+    assert sim._task is None
+
+    sim.start_background_loop()
+    first_task = sim._task
+    assert first_task is not None
+
+    # Calling start again while running must not replace the existing task.
+    sim.start_background_loop()
+    assert sim._task is first_task
+
+    sim.stop_background_loop()
+    assert sim._task is None
+    await asyncio.sleep(0)  # let the cancellation settle
 
 
 def test_crowd_status_endpoint_returns_snapshot(client):

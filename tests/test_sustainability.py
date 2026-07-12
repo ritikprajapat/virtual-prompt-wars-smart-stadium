@@ -11,7 +11,10 @@ def test_compare_impact_ranks_walk_bike_lowest():
 def test_compare_impact_ranks_rideshare_between_transit_and_car():
     comparison = compare_impact(TransportMode.RIDESHARE)
     assert comparison.impact_rank == 3
-    assert comparison.lower_impact_modes == [TransportMode.WALK_BIKE, TransportMode.PUBLIC_TRANSIT]
+    assert comparison.lower_impact_modes == [
+        TransportMode.WALK_BIKE,
+        TransportMode.PUBLIC_TRANSIT,
+    ]
 
 
 def test_compare_impact_ranks_personal_car_highest():
@@ -27,7 +30,11 @@ def test_compare_impact_ranks_personal_car_highest():
 def test_find_sustainability_touchpoint_returns_a_facility():
     touchpoint = find_sustainability_touchpoint()
     assert touchpoint is not None
-    assert touchpoint.type in {"bike_parking", "recycling_point", "water_refill_station"}
+    assert touchpoint.type in {
+        "bike_parking",
+        "recycling_point",
+        "water_refill_station",
+    }
 
 
 def test_sustainability_endpoint_returns_comparison_and_guidance(client, mock_gemini):

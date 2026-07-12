@@ -1,5 +1,9 @@
-"""End-to-end flow: fill out the wayfinding form and see the AI-phrased directions rendered."""
+"""E2E flow: submit the wayfinding form and see the AI-phrased directions."""
 import json
+
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def test_wayfinding_form_renders_ai_response(page, live_server):
@@ -10,12 +14,22 @@ def test_wayfinding_form_renders_ai_response(page, live_server):
             body=json.dumps(
                 {
                     "route": {
-                        "steps": [{"node_id": "gate_a", "node_name": "Gate A - North", "distance_m": 0, "walk_time_min": 0}],
+                        "steps": [
+                            {
+                                "node_id": "gate_a",
+                                "node_name": "Gate A - North",
+                                "distance_m": 0,
+                                "walk_time_min": 0,
+                            }
+                        ],
                         "total_distance_m": 120,
                         "total_walk_time_min": 3,
                         "step_free": True,
                     },
-                    "directions": "Head straight from Gate A and Section 112 is on your right, about a 3 minute walk.",
+                    "directions": (
+                        "Head straight from Gate A and Section 112 is on your right, "
+                        "about a 3 minute walk."
+                    ),
                 }
             ),
         )

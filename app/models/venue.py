@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 
 
 class Gate(BaseModel):
+    """An entry gate into the venue."""
+
     id: str
     name: str
     direction: str
@@ -11,6 +13,8 @@ class Gate(BaseModel):
 
 
 class Section(BaseModel):
+    """A seating section within the venue."""
+
     id: str
     name: str
     block: str
@@ -22,6 +26,8 @@ class Section(BaseModel):
 
 
 class Facility(BaseModel):
+    """A named venue facility such as a lift, medical point, or prayer room."""
+
     id: str
     type: str
     name: str
@@ -30,6 +36,8 @@ class Facility(BaseModel):
 
 
 class Edge(BaseModel):
+    """A walkable connection between two venue nodes."""
+
     from_: str = Field(alias="from")
     to: str
     distance_m: float
@@ -40,12 +48,16 @@ class Edge(BaseModel):
 
 
 class VenueInfo(BaseModel):
+    """Top-level metadata describing the venue."""
+
     name: str
     city: str
     capacity: int
 
 
 class Venue(BaseModel):
+    """The full venue graph: metadata plus nodes and their connecting edges."""
+
     venue: VenueInfo
     gates: list[Gate]
     sections: list[Section]
@@ -54,6 +66,8 @@ class Venue(BaseModel):
 
 
 class RouteStep(BaseModel):
+    """A single waypoint along a computed route."""
+
     node_id: str
     node_name: str
     distance_m: float
@@ -61,6 +75,8 @@ class RouteStep(BaseModel):
 
 
 class Route(BaseModel):
+    """A computed path across the venue with cumulative distance and time."""
+
     steps: list[RouteStep]
     total_distance_m: float
     total_walk_time_min: float

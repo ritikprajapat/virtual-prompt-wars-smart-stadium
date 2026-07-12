@@ -29,6 +29,18 @@ def test_compute_route_respects_step_free_requirement():
     assert route.step_free is True
 
 
+def test_compute_route_unknown_start_raises():
+    with pytest.raises(NoRouteFoundError):
+        compute_route("not_a_real_node", "sec_112")
+
+
+def test_compute_route_step_free_unreachable_raises():
+    # rest_s1 connects only via the non-step-free gate_c edge, so a step-free
+    # requirement leaves it unreachable and no route can be reconstructed.
+    with pytest.raises(NoRouteFoundError):
+        compute_route("gate_a", "rest_s1", require_step_free=True)
+
+
 def test_wayfinding_endpoint_returns_ai_phrased_directions(client, mock_gemini):
     response = client.post(
         "/api/wayfinding",

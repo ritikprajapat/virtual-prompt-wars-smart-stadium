@@ -1,12 +1,14 @@
 """Pydantic models for the Sustainability Advisor feature."""
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 from app.models.requests import Language
 
 
-class TransportMode(str, Enum):
+class TransportMode(StrEnum):
+    """Arrival modes ranked from lowest to highest relative impact."""
+
     WALK_BIKE = "walk_bike"
     PUBLIC_TRANSIT = "public_transit"
     RIDESHARE = "rideshare"
@@ -14,13 +16,15 @@ class TransportMode(str, Enum):
 
 
 class SustainabilityRequest(BaseModel):
+    """Request for sustainability guidance about a planned arrival mode."""
+
     start_node_id: str = Field(min_length=1, max_length=64)
     mode: TransportMode
     language: Language = Language.EN
 
 
 class ImpactComparison(BaseModel):
-    """A simple, transparent relative-impact ranking — not a real emissions calculation."""
+    """A transparent relative-impact ranking — not a real emissions calculation."""
 
     mode: TransportMode
     impact_rank: int
@@ -29,5 +33,7 @@ class ImpactComparison(BaseModel):
 
 
 class SustainabilityResponse(BaseModel):
+    """Impact comparison paired with AI-drafted guidance for the guest."""
+
     comparison: ImpactComparison
     guidance: str

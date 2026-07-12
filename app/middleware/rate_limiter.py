@@ -8,5 +8,5 @@ limiter = Limiter(key_func=get_remote_address, headers_enabled=True)
 
 
 def ai_rate_limit() -> str:
-    """Rate limit string (e.g. '20/minute') derived from settings, for use in decorators."""
+    """Rate-limit string (e.g. '20/minute') from settings, for use in decorators."""
     return f"{get_settings().rate_limit_per_minute}/minute"

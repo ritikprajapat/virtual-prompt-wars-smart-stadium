@@ -18,6 +18,17 @@ def test_find_accessible_section_returns_none_for_inaccessible_section():
     assert find_accessible_section("sec_310") is None
 
 
+def test_find_accessible_section_returns_none_for_unknown_id():
+    # A gate/facility id is not a section, so the lookup exhausts and returns None.
+    assert find_accessible_section("gate_a") is None
+
+
+def test_relevant_facilities_hearing_need_returns_only_medical():
+    facilities = relevant_facilities("hearing")
+    assert all(f.accessible for f in facilities)
+    assert all(f.type == "medical" for f in facilities)
+
+
 def test_find_accessible_section_returns_section_when_accessible():
     section = find_accessible_section("sec_210")
     assert section is not None

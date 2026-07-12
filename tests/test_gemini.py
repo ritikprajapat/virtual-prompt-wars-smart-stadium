@@ -1,4 +1,4 @@
-"""Unit tests for the Gemini wrapper itself (not the higher-level services that mock it away)."""
+"""Unit tests for the Gemini wrapper itself (services mock it away elsewhere)."""
 import pytest
 
 from app.services import gemini as gemini_module
@@ -32,13 +32,19 @@ def _clear_client_cache():
 
 async def test_ask_gemini_returns_stripped_text(monkeypatch):
     monkeypatch.setattr(
-        gemini_module, "_get_client", lambda: _FakeClient(lambda model, contents: _FakeResponse("  Hello, fan!  "))
+        gemini_module,
+        "_get_client",
+        lambda: _FakeClient(lambda model, contents: _FakeResponse("  Hello, fan!  ")),
     )
     assert await ask_gemini("hi") == "Hello, fan!"
 
 
 async def test_ask_gemini_raises_on_empty_response(monkeypatch):
-    monkeypatch.setattr(gemini_module, "_get_client", lambda: _FakeClient(lambda model, contents: _FakeResponse("")))
+    monkeypatch.setattr(
+        gemini_module,
+        "_get_client",
+        lambda: _FakeClient(lambda model, contents: _FakeResponse("")),
+    )
     with pytest.raises(RuntimeError, match="AI request failed"):
         await ask_gemini("hi")
 

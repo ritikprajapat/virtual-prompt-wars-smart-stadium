@@ -1,0 +1,1 @@
+"""MatchDay AI application package."""

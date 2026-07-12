@@ -3,31 +3,24 @@ import heapq
 
 from app.models.venue import Route, RouteStep
 from app.services.gemini import ask_gemini
+from app.services.i18n import language_name
 from app.services.venue_repository import adjacency, node_names
-
-_LANGUAGE_NAMES = {
-    "en": "English",
-    "es": "Spanish",
-    "fr": "French",
-    "pt": "Portuguese",
-    "ar": "Arabic",
-    "de": "German",
-    "ja": "Japanese",
-    "zh": "Mandarin Chinese",
-}
 
 
 class NoRouteFoundError(Exception):
-    pass
+    """Raised when no path exists between the requested venue nodes."""
 
 
-def _dijkstra(
+def _dijkstra(  # pylint: disable=too-many-locals
     graph: dict[str, list[tuple[str, float, float, bool]]],
     start_node_id: str,
     target_node_id: str,
     require_step_free: bool,
 ) -> tuple[dict[str, float], dict[str, float], dict[str, bool], dict[str, str]]:
-    """Shortest-path search weighted by distance_m, tracking walk time and step-free status alongside."""
+    """Shortest-path search weighted by distance_m.
+
+    Tracks cumulative walk time and step-free status alongside distance.
+    """
     distances: dict[str, float] = {start_node_id: 0.0}
     walk_times: dict[str, float] = {start_node_id: 0.0}
     step_free_so_far: dict[str, bool] = {start_node_id: True}
@@ -56,7 +49,10 @@ def _dijkstra(
     return distances, walk_times, step_free_so_far, previous
 
 
-def _reconstruct_path(previous: dict[str, str], start_node_id: str, target_node_id: str) -> list[str]:
+def _reconstruct_path(
+    previous: dict[str, str], start_node_id: str, target_node_id: str
+) -> list[str]:
+    """Walk the ``previous`` back-pointers to build the path start -> target."""
     path = [target_node_id]
     while path[-1] != start_node_id:
         path.append(previous[path[-1]])
@@ -64,7 +60,9 @@ def _reconstruct_path(previous: dict[str, str], start_node_id: str, target_node_
     return path
 
 
-def compute_route(start_node_id: str, target_node_id: str, require_step_free: bool = False) -> Route:
+def compute_route(
+    start_node_id: str, target_node_id: str, require_step_free: bool = False
+) -> Route:
     """Dijkstra's algorithm over the venue graph, weighted by distance_m.
 
     Raises NoRouteFoundError if either node is unknown or no path exists
@@ -103,12 +101,14 @@ def compute_route(start_node_id: str, target_node_id: str, require_step_free: bo
 
 async def phrase_directions(route: Route, language: str) -> str:
     """Ask Gemini to turn a computed route into natural, friendly directions."""
-    language_name = _LANGUAGE_NAMES.get(language, "English")
+    lang_name = language_name(language)
     step_names = " -> ".join(step.node_name for step in route.steps)
     prompt = (
-        f"You are a stadium wayfinding assistant. Rewrite this route as short, friendly, "
-        f"step-by-step walking directions in {language_name}. Keep it under 80 words. "
-        f"Mention the total walk time of about {round(route.total_walk_time_min)} minutes.\n\n"
+        f"You are a stadium wayfinding assistant. "
+        f"Rewrite this route as short, friendly, "
+        f"step-by-step walking directions in {lang_name}. Keep it under 80 words. "
+        f"Mention the total walk time of about "
+        f"{round(route.total_walk_time_min)} minutes.\n\n"
         f"Route waypoints in order: {step_names}."
     )
     return await ask_gemini(prompt)

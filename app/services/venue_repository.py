@@ -30,12 +30,23 @@ def node_names() -> dict[str, str]:
     return names
 
 
+def node_name(node_id: str) -> str:
+    """Display name for any gate/section/facility id, falling back to the id itself."""
+    return node_names().get(node_id, node_id)
+
+
 @lru_cache
 def adjacency() -> dict[str, list[tuple[str, float, float, bool]]]:
-    """Bidirectional adjacency list: node_id -> [(neighbor_id, distance_m, walk_time_min, step_free), ...]."""
+    """Bidirectional adjacency list.
+
+    Maps ``node_id`` to a list of ``(neighbor_id, distance_m, walk_time_min,
+    step_free)`` tuples for every edge touching that node.
+    """
     venue = load_venue()
     graph: dict[str, list[tuple[str, float, float, bool]]] = {}
     for edge in venue.edges:
-        graph.setdefault(edge.from_, []).append((edge.to, edge.distance_m, edge.walk_time_min, edge.step_free))
-        graph.setdefault(edge.to, []).append((edge.from_, edge.distance_m, edge.walk_time_min, edge.step_free))
+        forward = (edge.to, edge.distance_m, edge.walk_time_min, edge.step_free)
+        backward = (edge.from_, edge.distance_m, edge.walk_time_min, edge.step_free)
+        graph.setdefault(edge.from_, []).append(forward)
+        graph.setdefault(edge.to, []).append(backward)
     return graph

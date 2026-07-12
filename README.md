@@ -79,6 +79,9 @@ an occupancy trend chart:
                                     the Gemini API / API key
 ```
 
+For the rationale behind these and other tradeoffs (FastAPI, Dijkstra, rule-based sustainability
+scoring, Railway, …), see the [architecture decision log](docs/decisions.md).
+
 Design choices worth calling out:
 
 - **AI is a phrasing layer, not the decision-maker.** Routing (Dijkstra), crowd occupancy
@@ -138,7 +141,9 @@ Requires Python 3.11+.
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt          # runtime only
+# or, for development (adds ruff, mypy, interrogate, pytest-cov):
+pip install -r requirements-dev.txt
 playwright install chromium   # only needed for the e2e suite
 
 cp .env.example .env
@@ -167,25 +172,40 @@ All configuration is environment-driven via `app/config.py` (`pydantic-settings`
 
 ## Testing
 
-Unit/integration tests and the Playwright e2e suite are run as **separate invocations** —
-Playwright's sync API and pytest-asyncio's event loop conflict when run in the same process.
+The Playwright e2e tests are marked `e2e` and **deselected by default** (Playwright's sync API and
+pytest-asyncio's event loop conflict in the same process, and e2e needs a real browser). So the
+default `pytest` run covers only the unit/integration suite; run e2e explicitly when you want it.
 
 ```bash
-pytest tests --ignore=tests/e2e --cov=app --cov-report=term-missing
-pytest tests/e2e
+pytest --cov=app --cov-report=term-missing   # unit + integration (e2e deselected)
+pytest -m e2e                                 # e2e only (needs `playwright install chromium`)
 ```
 
 - **Unit/integration** (`tests/*.py`): route computation, crowd simulation, accessibility
-  matching, sustainability ranking, request validation, rate limiting — all with Gemini mocked at
-  the boundary (`tests/conftest.py`'s `mock_gemini` fixture), plus a dedicated
-  `tests/test_gemini.py` that exercises the real `ask_gemini`/`_get_client` logic itself
-  (success, empty response, timeout, unexpected errors, missing API key) against a fake client.
+  matching, sustainability ranking, request validation, rate limiting, and every route's
+  success/`422`/`502` shapes — all with Gemini mocked at the boundary (`tests/conftest.py`'s
+  `mock_gemini` fixture), plus a dedicated `tests/test_gemini.py` that exercises the real
+  `ask_gemini`/`_get_client` logic itself (success, empty response, timeout, unexpected errors,
+  missing API key) against a fake client.
 - **E2E** (`tests/e2e/*.py`, Playwright): drives the actual rendered pages in a real browser —
   form submission → rendered AI response, live dashboard occupancy updates, keyboard tab order,
   and an axe-core scan asserting **zero accessibility violations** on both `/` and `/dashboard`.
 
-Current coverage: **96%** on `app/` (backend). `app/services/gemini.py` — the module that talks
-to the real API — is at 100%.
+Coverage is enforced at **100%** line and branch on `app/` (`fail_under` in `pyproject.toml`).
+
+### Lint, types, and docstrings
+
+The same checks that run in CI can be run locally (config lives in `pyproject.toml`):
+
+```bash
+ruff check app tests    # lint (import order, bugbear, pyupgrade, comprehensions, …)
+mypy app                # static type checking (strict mode)
+interrogate app         # docstring coverage (enforced at 100%)
+```
+
+CI (`.github/workflows/ci.yml`) runs ruff, mypy, interrogate, pytest+coverage, and a `pip-audit`
+dependency-vulnerability scan on every push and PR; a separate CodeQL workflow
+(`.github/workflows/codeql.yml`) runs security analysis on push, PR, and a weekly schedule.
 
 ## Security
 
@@ -234,4 +254,11 @@ tests/
   test_*.py                Unit + integration tests (pytest, mocked Gemini)
   test_gemini.py            Unit tests for the real Gemini wrapper (client + error paths)
   e2e/                      Playwright end-to-end + axe-core accessibility tests
+docs/
+  decisions.md             Architecture decision log (rationale for key tradeoffs)
+  accessibility-report.md  WCAG audit findings for the rendered pages
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).
