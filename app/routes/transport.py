@@ -16,13 +16,13 @@ async def get_transport_suggestion(
 ) -> dict[str, object]:
     """Return an AI-drafted transit suggestion for the given distance.
 
-    ``request`` and ``response`` are unused here but required by the slowapi
-    rate-limit decorator applied above.
+    ``response`` is unused here but required by the slowapi rate-limit
+    decorator applied above.
     """
     # pylint: disable=unused-argument
     try:
         suggestion = await suggest_transport(
-            payload.distance_km, payload.language.value
+            payload.distance_km, payload.language.value, llm=request.app.state.llm
         )
     except RuntimeError as exc:
         raise ai_service_unavailable() from exc

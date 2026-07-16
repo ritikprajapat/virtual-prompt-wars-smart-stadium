@@ -16,14 +16,17 @@ async def get_sustainability_advice(
 ) -> dict[str, object]:
     """Return an arrival-mode impact comparison plus AI-drafted guidance.
 
-    ``request`` and ``response`` are unused here but required by the slowapi
-    rate-limit decorator applied above.
+    ``response`` is unused here but required by the slowapi rate-limit
+    decorator applied above.
     """
     # pylint: disable=unused-argument
     comparison = compare_impact(payload.mode)
     try:
         guidance = await draft_guidance(
-            payload.start_node_id, comparison, payload.language.value
+            payload.start_node_id,
+            comparison,
+            payload.language.value,
+            llm=request.app.state.llm,
         )
     except RuntimeError as exc:
         raise ai_service_unavailable() from exc

@@ -8,6 +8,8 @@ facility logic.
 """
 from abc import ABC, abstractmethod
 
+from app.config import Settings
+
 
 class LLMClient(ABC):
     """Abstraction over any text-generation backend used for phrasing.
@@ -38,3 +40,15 @@ class GeminiClient(LLMClient):
         from app.services.gemini import ask_gemini
 
         return await ask_gemini(prompt)
+
+
+def get_llm_client(settings: Settings) -> LLMClient:
+    """Return the LLMClient appropriate for the given settings.
+
+    This is the single place that decides which concrete implementation the
+    app runs against, so wiring in ``create_app`` depends only on the
+    ``LLMClient`` abstraction. It currently always returns the live
+    Gemini-backed client; ``settings`` is the seam through which an offline
+    implementation is selected when no API key is configured.
+    """
+    return GeminiClient()

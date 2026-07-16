@@ -16,8 +16,8 @@ async def get_wayfinding(
 ) -> dict[str, object]:
     """Compute a route between two nodes and return AI-phrased directions.
 
-    ``request`` and ``response`` are unused here but required by the slowapi
-    rate-limit decorator applied above.
+    ``response`` is unused here but required by the slowapi rate-limit
+    decorator applied above.
     """
     # pylint: disable=unused-argument
     try:
@@ -33,7 +33,9 @@ async def get_wayfinding(
         ) from exc
 
     try:
-        directions = await phrase_directions(route, payload.language.value)
+        directions = await phrase_directions(
+            route, payload.language.value, llm=request.app.state.llm
+        )
     except RuntimeError as exc:
         raise ai_service_unavailable() from exc
 
