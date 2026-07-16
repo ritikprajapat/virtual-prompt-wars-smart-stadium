@@ -19,7 +19,6 @@ async def get_sustainability_advice(
     ``response`` is unused here but required by the slowapi rate-limit
     decorator applied above.
     """
-    # pylint: disable=unused-argument
     comparison = compare_impact(payload.mode)
     try:
         guidance = await draft_guidance(

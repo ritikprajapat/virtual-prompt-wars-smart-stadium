@@ -9,6 +9,7 @@ facility logic.
 from abc import ABC, abstractmethod
 
 from app.config import Settings
+from app.services import gemini
 
 
 class LLMClient(ABC):
@@ -29,17 +30,15 @@ class LLMClient(ABC):
 class GeminiClient(LLMClient):
     """Concrete LLMClient backed by :func:`app.services.gemini.ask_gemini`.
 
-    ``ask_gemini`` is imported lazily inside :meth:`generate` so this module
-    stays free of the Gemini SDK import chain and the single source of the
-    real call can be substituted in tests via the one ``app.services.gemini``
-    module attribute.
+    The ``gemini`` module is referenced (rather than importing ``ask_gemini``
+    by name) so the call resolves the ``app.services.gemini.ask_gemini``
+    attribute at call time — the single source of the real Gemini call, which
+    keeps it substitutable in tests through one well-known seam.
     """
 
     async def generate(self, prompt: str) -> str:
         """Phrase ``prompt`` via the live Gemini call, propagating its errors."""
-        from app.services.gemini import ask_gemini
-
-        return await ask_gemini(prompt)
+        return await gemini.ask_gemini(prompt)
 
 
 def get_llm_client(settings: Settings) -> LLMClient:

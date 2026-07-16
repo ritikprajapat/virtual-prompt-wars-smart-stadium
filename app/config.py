@@ -18,8 +18,13 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        """Parse the comma-separated ``allowed_origins`` string into a clean list."""
-        origins = self.allowed_origins.split(",")  # pylint: disable=no-member
+        """Parse the comma-separated ``allowed_origins`` string into a clean list.
+
+        ``allowed_origins`` is a single environment variable holding one or
+        more origins separated by commas, so it is split and trimmed here into
+        the list form the CORS middleware expects.
+        """
+        origins = self.allowed_origins.split(",")
         return [origin.strip() for origin in origins if origin.strip()]
 
 

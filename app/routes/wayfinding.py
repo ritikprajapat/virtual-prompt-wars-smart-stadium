@@ -19,7 +19,6 @@ async def get_wayfinding(
     ``response`` is unused here but required by the slowapi rate-limit
     decorator applied above.
     """
-    # pylint: disable=unused-argument
     try:
         route = compute_route(
             payload.start_node_id,

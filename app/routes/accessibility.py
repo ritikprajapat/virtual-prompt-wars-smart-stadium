@@ -19,7 +19,6 @@ async def request_accommodation(
     ``response`` is unused here but required by the slowapi rate-limit
     decorator applied above.
     """
-    # pylint: disable=unused-argument
     facilities = relevant_facilities(payload.need_type.value)
     try:
         plan = await draft_accommodation_plan(

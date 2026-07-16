@@ -1,5 +1,11 @@
 """Route computation over the venue graph, plus AI-phrased directions.
 
+Dijkstra's algorithm is used because the venue is a small, non-negative
+weighted graph where we need the single guaranteed-shortest walking path from
+one node to another — exactly what Dijkstra gives with far less overhead than
+an all-pairs approach, and without the admissible-heuristic burden A* would add
+for no benefit at this size.
+
 The AI call is injected via the LLMClient abstraction (app.services.llm)
 rather than called directly, so phrasing can be swapped, mocked, or replaced
 with an offline fallback without changing business logic here.
@@ -18,7 +24,7 @@ class NoRouteFoundError(Exception):
     """Raised when no path exists between the requested venue nodes."""
 
 
-def _dijkstra(  # pylint: disable=too-many-locals
+def _dijkstra(
     graph: dict[str, list[tuple[str, float, float, bool]]],
     start_node_id: str,
     target_node_id: str,
@@ -26,7 +32,9 @@ def _dijkstra(  # pylint: disable=too-many-locals
 ) -> tuple[dict[str, float], dict[str, float], dict[str, bool], dict[str, str]]:
     """Shortest-path search weighted by distance_m.
 
-    Tracks cumulative walk time and step-free status alongside distance.
+    Several parallel bookkeeping maps are tracked per node (distance, walk
+    time, step-free-so-far, and back-pointers) because the route we return
+    reports all of those, not just the distance the search minimises on.
     """
     distances: dict[str, float] = {start_node_id: 0.0}
     walk_times: dict[str, float] = {start_node_id: 0.0}

@@ -106,10 +106,12 @@ def create_app(
     app.state.llm = get_llm_client(settings)
     app.state.simulator = simulator
 
-    # slowapi's handler signature is narrower than Starlette's generic Exception
-    # handler type, but is correct for the RateLimitExceeded it is registered
-    # against.
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+    # Registered via the decorator form (rather than add_exception_handler) so
+    # each handler's specific exception type is accepted: slowapi's
+    # _rate_limit_exceeded_handler is typed for RateLimitExceeded, and our 422
+    # handler for RequestValidationError — both narrower than the generic
+    # Exception signature add_exception_handler expects.
+    app.exception_handler(RateLimitExceeded)(_rate_limit_exceeded_handler)
     app.exception_handler(RequestValidationError)(validation_exception_handler)
 
     app.add_middleware(

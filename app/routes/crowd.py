@@ -26,7 +26,6 @@ async def simulate_tick(request: Request, response: Response) -> dict[str, objec
     ``response`` is unused here but required by the slowapi rate-limit
     decorator applied above.
     """
-    # pylint: disable=unused-argument
     simulator = request.app.state.simulator
     new_alerts = await simulator.tick()
     return {

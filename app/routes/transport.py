@@ -19,7 +19,6 @@ async def get_transport_suggestion(
     ``response`` is unused here but required by the slowapi rate-limit
     decorator applied above.
     """
-    # pylint: disable=unused-argument
     try:
         suggestion = await suggest_transport(
             payload.distance_km, payload.language.value, llm=request.app.state.llm
