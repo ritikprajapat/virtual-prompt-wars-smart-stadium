@@ -3,8 +3,10 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.middleware.rate_limiter import limiter
+from app.models.venue import Edge, Facility, Gate, Section, Venue, VenueInfo
 from app.services.crowd import simulator
 from app.services.llm import LLMClient
+from app.services.repository import InMemoryVenueRepository
 
 
 class FakeLLMClient(LLMClient):
@@ -59,3 +61,52 @@ def mock_gemini(monkeypatch):
 def client():
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def synthetic_venue() -> Venue:
+    """A small, self-contained venue graph built entirely in memory."""
+    return Venue(
+        venue=VenueInfo(name="Test Arena", city="Testville", capacity=100),
+        gates=[
+            Gate(
+                id="gate_x",
+                name="Gate X",
+                direction="north",
+                accessible=True,
+                status="open",
+            )
+        ],
+        sections=[
+            Section(
+                id="sec_x",
+                name="Section X",
+                block="A",
+                level=1,
+                gate_access=["gate_x"],
+                row_range="1-10",
+                accessible_seating=True,
+                capacity=50,
+            )
+        ],
+        facilities=[
+            Facility(
+                id="fac_x", type="medical", name="First Aid", level=1, accessible=True
+            )
+        ],
+        edges=[
+            Edge(
+                from_="gate_x",
+                to="sec_x",
+                distance_m=10.0,
+                walk_time_min=1.0,
+                step_free=True,
+            )
+        ],
+    )
+
+
+@pytest.fixture
+def in_memory_venue_repository(synthetic_venue: Venue) -> InMemoryVenueRepository:
+    """An InMemoryVenueRepository serving the synthetic venue (no file I/O)."""
+    return InMemoryVenueRepository(synthetic_venue)

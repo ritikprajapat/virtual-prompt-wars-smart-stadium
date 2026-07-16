@@ -23,7 +23,7 @@ from app.middleware.rate_limiter import limiter
 from app.routes import accessibility, crowd, sustainability, transport, wayfinding
 from app.services.crowd import simulator
 from app.services.llm import get_llm_client
-from app.services.venue_repository import load_venue
+from app.services.repository import JsonVenueRepository, VenueRepository
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -82,19 +82,27 @@ async def dashboard(request: Request) -> Response:
     return templates.TemplateResponse(request, "dashboard.html", {"gates": venue.gates})
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    venue_repository: VenueRepository | None = None,
+) -> FastAPI:
     """Build and wire a MatchDay AI application instance.
 
     All shared collaborators are constructed here (the composition root) and
     stored on ``app.state`` so handlers depend on abstractions passed in via
     ``request.app.state`` rather than importing concrete module-level globals.
+    ``venue_repository`` defaults to the file-backed :class:`JsonVenueRepository`
+    but any :class:`VenueRepository` can be injected (e.g. an in-memory one in
+    tests) without changing a single handler.
     """
     settings = settings or get_settings()
+    venue_repository = venue_repository or JsonVenueRepository()
 
     app = FastAPI(title="MatchDay AI", lifespan=lifespan)
 
     app.state.limiter = limiter
-    app.state.venue = load_venue()
+    app.state.venue_repository = venue_repository
+    app.state.venue = venue_repository.load_venue()
     app.state.llm = get_llm_client(settings)
     app.state.simulator = simulator
 
