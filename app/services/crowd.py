@@ -1,4 +1,12 @@
-"""Live gate occupancy simulation with AI-generated reroute alerts at high occupancy."""
+"""Live gate occupancy simulation with AI-generated reroute alerts at high occupancy.
+
+The simulation advances on a background task on a fixed interval rather than on
+each request so that occupancy evolves as real wall-clock time passes and every
+client sees the same shared state, independent of who happens to poll. Ticking
+on-request would instead tie the crowd's movement to request volume and give
+each caller a divergent view. The alert phrasing falls back to a static message
+when the AI call fails, so a Gemini outage degrades wording, never the alert.
+"""
 import asyncio
 import random
 from dataclasses import dataclass, field

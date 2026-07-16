@@ -1,13 +1,19 @@
-"""Heuristic relative-impact comparison across arrival modes, phrased by Gemini.
+"""Heuristic relative-impact comparison across arrival modes, phrased by an LLM.
 
 The ranking below is a transparent, fixed ordering meant to nudge behavior — it is
 not a real emissions calculation and makes no attempt to be one.
+
+The AI call is injected via the LLMClient abstraction (app.services.llm)
+rather than called directly, so phrasing can be swapped, mocked, or replaced
+with an offline fallback without changing business logic here.
 """
 from app.models.sustainability import ImpactComparison, TransportMode
 from app.models.venue import Facility
-from app.services.gemini import ask_gemini
 from app.services.i18n import language_name
+from app.services.llm import GeminiClient, LLMClient
 from app.services.venue_repository import load_venue, node_name
+
+_default_llm: LLMClient = GeminiClient()
 
 _IMPACT_ORDER = [
     TransportMode.WALK_BIKE,
@@ -45,9 +51,12 @@ def compare_impact(mode: TransportMode) -> ImpactComparison:
 
 
 async def draft_guidance(
-    start_node_id: str, comparison: ImpactComparison, language: str
+    start_node_id: str,
+    comparison: ImpactComparison,
+    language: str,
+    llm: LLMClient | None = None,
 ) -> str:
-    """Ask Gemini for 2-3 friendly sentences nudging toward the lower-impact option."""
+    """Ask the LLM for 2-3 friendly sentences nudging toward the lower-impact option."""
     start_name = node_name(start_node_id)
     mode_label = _MODE_LABELS[comparison.mode]
     lang_name = language_name(language)
@@ -76,4 +85,4 @@ async def draft_guidance(
         f"touchpoint was given, name it naturally. Keep it under 70 words and avoid "
         f"a lecturing tone."
     )
-    return await ask_gemini(prompt)
+    return await (llm or _default_llm).generate(prompt)

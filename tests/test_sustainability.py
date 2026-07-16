@@ -1,5 +1,20 @@
 from app.models.sustainability import TransportMode
-from app.services.sustainability import compare_impact, find_sustainability_touchpoint
+from app.services.sustainability import (
+    compare_impact,
+    draft_guidance,
+    find_sustainability_touchpoint,
+)
+from tests.conftest import FakeLLMClient
+
+
+async def test_draft_guidance_uses_injected_llm():
+    # Proves the DIP seam: the impact comparison is computed deterministically,
+    # then phrased by whatever LLMClient is injected.
+    fake = FakeLLMClient("Nice choice — the bike racks are right by gate A.")
+    comparison = compare_impact(TransportMode.WALK_BIKE)
+    guidance = await draft_guidance("gate_a", comparison, "en", llm=fake)
+    assert guidance == "Nice choice — the bike racks are right by gate A."
+    assert fake.prompts[0]
 
 
 def test_compare_impact_ranks_walk_bike_lowest():

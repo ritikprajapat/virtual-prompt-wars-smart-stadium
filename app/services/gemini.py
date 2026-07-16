@@ -1,4 +1,12 @@
-"""Server-side wrapper around the Gemini API. The API key never leaves this process."""
+"""Server-side wrapper around the Gemini API. The API key never leaves this process.
+
+Gemini is used only as a phrasing layer over facts the deterministic services
+have already computed, so it is confined to this one module behind
+``ask_gemini``. Every failure — missing key, timeout, or API error — is caught
+and re-raised as a generic ``RuntimeError`` with a log-safe message, so callers
+fail closed (routes translate it to a 502) and no provider detail or raw
+exception ever reaches a client.
+"""
 import asyncio
 import logging
 from functools import lru_cache

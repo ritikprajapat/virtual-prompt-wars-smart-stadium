@@ -1,6 +1,21 @@
 import pytest
 
-from app.services.wayfinding import NoRouteFoundError, compute_route
+from app.services.wayfinding import (
+    NoRouteFoundError,
+    compute_route,
+    phrase_directions,
+)
+from tests.conftest import FakeLLMClient
+
+
+async def test_phrase_directions_uses_injected_llm():
+    # Proves the DIP seam: phrasing is delegated to whatever LLMClient is
+    # injected, leaving the deterministic route computation untouched.
+    route = compute_route("gate_a", "sec_112")
+    fake = FakeLLMClient("Head straight to your seat.")
+    directions = await phrase_directions(route, "en", llm=fake)
+    assert directions == "Head straight to your seat."
+    assert fake.prompts[0]  # a prompt built from the route was passed through
 
 
 def test_compute_route_finds_shortest_path():

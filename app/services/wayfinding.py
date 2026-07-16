@@ -1,17 +1,30 @@
-"""Route computation over the venue graph, plus AI-phrased directions."""
+"""Route computation over the venue graph, plus AI-phrased directions.
+
+Dijkstra's algorithm is used because the venue is a small, non-negative
+weighted graph where we need the single guaranteed-shortest walking path from
+one node to another — exactly what Dijkstra gives with far less overhead than
+an all-pairs approach, and without the admissible-heuristic burden A* would add
+for no benefit at this size.
+
+The AI call is injected via the LLMClient abstraction (app.services.llm)
+rather than called directly, so phrasing can be swapped, mocked, or replaced
+with an offline fallback without changing business logic here.
+"""
 import heapq
 
 from app.models.venue import Route, RouteStep
-from app.services.gemini import ask_gemini
 from app.services.i18n import language_name
+from app.services.llm import GeminiClient, LLMClient
 from app.services.venue_repository import adjacency, node_names
+
+_default_llm: LLMClient = GeminiClient()
 
 
 class NoRouteFoundError(Exception):
     """Raised when no path exists between the requested venue nodes."""
 
 
-def _dijkstra(  # pylint: disable=too-many-locals
+def _dijkstra(
     graph: dict[str, list[tuple[str, float, float, bool]]],
     start_node_id: str,
     target_node_id: str,
@@ -19,7 +32,9 @@ def _dijkstra(  # pylint: disable=too-many-locals
 ) -> tuple[dict[str, float], dict[str, float], dict[str, bool], dict[str, str]]:
     """Shortest-path search weighted by distance_m.
 
-    Tracks cumulative walk time and step-free status alongside distance.
+    Several parallel bookkeeping maps are tracked per node (distance, walk
+    time, step-free-so-far, and back-pointers) because the route we return
+    reports all of those, not just the distance the search minimises on.
     """
     distances: dict[str, float] = {start_node_id: 0.0}
     walk_times: dict[str, float] = {start_node_id: 0.0}
@@ -99,8 +114,10 @@ def compute_route(
     )
 
 
-async def phrase_directions(route: Route, language: str) -> str:
-    """Ask Gemini to turn a computed route into natural, friendly directions."""
+async def phrase_directions(
+    route: Route, language: str, llm: LLMClient | None = None
+) -> str:
+    """Ask the LLM to turn a computed route into natural, friendly directions."""
     lang_name = language_name(language)
     step_names = " -> ".join(step.node_name for step in route.steps)
     prompt = (
@@ -111,4 +128,4 @@ async def phrase_directions(route: Route, language: str) -> str:
         f"{round(route.total_walk_time_min)} minutes.\n\n"
         f"Route waypoints in order: {step_names}."
     )
-    return await ask_gemini(prompt)
+    return await (llm or _default_llm).generate(prompt)

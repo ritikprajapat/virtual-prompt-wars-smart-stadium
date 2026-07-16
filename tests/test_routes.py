@@ -21,24 +21,20 @@ AI_ROUTES = [
     ),
 ]
 
-# Module path whose `ask_gemini` reference each route ultimately calls.
-_SERVICE_MODULE = {
-    "/api/wayfinding": "app.services.wayfinding.ask_gemini",
-    "/api/accessibility/request": "app.services.accessibility.ask_gemini",
-    "/api/transport/suggest": "app.services.transport.ask_gemini",
-    "/api/sustainability/advise": "app.services.sustainability.ask_gemini",
-}
+# The four AI routes phrase through the LLMClient abstraction, whose
+# GeminiClient resolves this single source at call time; patching it simulates
+# a Gemini outage for all of them.
+_SERVICE_MODULE = "app.services.gemini.ask_gemini"
 
 
 @pytest.fixture
 def failing_gemini(monkeypatch):
-    """Patch every service's ask_gemini to raise, simulating a Gemini outage."""
+    """Patch the shared ask_gemini source to raise, simulating a Gemini outage."""
 
     async def _boom(prompt: str) -> str:
         raise RuntimeError("AI request failed")
 
-    for target in _SERVICE_MODULE.values():
-        monkeypatch.setattr(target, _boom)
+    monkeypatch.setattr(_SERVICE_MODULE, _boom)
     return _boom
 
 
