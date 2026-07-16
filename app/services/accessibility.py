@@ -1,8 +1,15 @@
-"""Matches accessibility needs to facilities and drafts a plain-language plan."""
+"""Matches accessibility needs to facilities and drafts a plain-language plan.
+
+The AI call is injected via the LLMClient abstraction (app.services.llm)
+rather than called directly, so phrasing can be swapped, mocked, or replaced
+with an offline fallback without changing business logic here.
+"""
 from app.models.venue import Facility, Section
-from app.services.gemini import ask_gemini
 from app.services.i18n import language_name
+from app.services.llm import GeminiClient, LLMClient
 from app.services.venue_repository import load_venue, node_name
+
+_default_llm: LLMClient = GeminiClient()
 
 _NEED_FACILITY_TYPES = {
     "wheelchair": {"elevator", "medical"},
@@ -33,9 +40,13 @@ def relevant_facilities(need_type: str) -> list[Facility]:
 
 
 async def draft_accommodation_plan(
-    need_type: str, target_node_id: str, language: str, notes: str | None
+    need_type: str,
+    target_node_id: str,
+    language: str,
+    notes: str | None,
+    llm: LLMClient | None = None,
 ) -> str:
-    """Ask Gemini for a short, step-by-step accommodation plan for the given need."""
+    """Ask the LLM for a short, step-by-step accommodation plan for the given need."""
     target_name = node_name(target_node_id)
     facilities = relevant_facilities(need_type)
     facility_names = ", ".join(f.name for f in facilities[:5]) or "none listed"
@@ -50,4 +61,4 @@ async def draft_accommodation_plan(
         f"plain language, under 120 words, including which entrance and "
         f"facilities to use."
     )
-    return await ask_gemini(prompt)
+    return await (llm or _default_llm).generate(prompt)

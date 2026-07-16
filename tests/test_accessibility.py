@@ -1,4 +1,20 @@
-from app.services.accessibility import find_accessible_section, relevant_facilities
+from app.services.accessibility import (
+    draft_accommodation_plan,
+    find_accessible_section,
+    relevant_facilities,
+)
+from tests.conftest import FakeLLMClient
+
+
+async def test_draft_accommodation_plan_uses_injected_llm():
+    # Proves the DIP seam: the accommodation plan is phrased by the injected
+    # LLMClient; facility matching stays deterministic and Gemini-free.
+    fake = FakeLLMClient("Use the north elevator, then row 12.")
+    plan = await draft_accommodation_plan(
+        "wheelchair", "sec_210", "en", None, llm=fake
+    )
+    assert plan == "Use the north elevator, then row 12."
+    assert "wheelchair" in fake.prompts[0]
 
 
 def test_relevant_facilities_filters_by_need_type():
