@@ -15,6 +15,17 @@ class Settings(BaseSettings):
     allowed_origins: str = Field(
         default="http://localhost:8000", alias="ALLOWED_ORIGINS"
     )
+    # Off by default so a Gemini outage still surfaces as a 502 (the frozen API
+    # contract). When enabled, the phrasing layer degrades to a static message
+    # instead, keeping features usable when the AI backend is unavailable.
+    llm_offline_fallback: bool = Field(
+        default=False, alias="LLM_OFFLINE_FALLBACK"
+    )
+    gemini_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_MODEL")
+    gemini_timeout_seconds: float = Field(
+        default=10.0, alias="GEMINI_TIMEOUT_SECONDS"
+    )
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     @property
     def allowed_origins_list(self) -> list[str]:

@@ -225,8 +225,8 @@
   }
 
   function renderFeed() {
+    alertsList.innerHTML = "";
     if (!feedEntries.length) {
-      alertsList.innerHTML = "";
       const empty = document.createElement("div");
       empty.className = "no-alert";
       empty.appendChild(buildCheckIcon());
@@ -236,16 +236,39 @@
       alertsList.appendChild(empty);
       return;
     }
-    alertsList.innerHTML = feedEntries
-      .map(
-        (entry) => `
-      <div class="log-row">
-        <div class="log-time mono">${entry.time}</div>
-        <div class="log-dot" style="background:var(--color-${entry.severity === "severity-high" ? "danger" : entry.severity === "severity-medium" ? "warning" : "success"})"></div>
-        <div class="log-body"><b>${entry.title}</b><span>${entry.detail}</span></div>
-      </div>`
-      )
-      .join("");
+    // Built via DOM + textContent (not innerHTML): the alert title and detail
+    // include a gate name and AI-generated text, so they must never be parsed
+    // as markup.
+    feedEntries.forEach((entry) => {
+      const tone =
+        entry.severity === "severity-high"
+          ? "danger"
+          : entry.severity === "severity-medium"
+          ? "warning"
+          : "success";
+
+      const row = document.createElement("div");
+      row.className = "log-row";
+
+      const time = document.createElement("div");
+      time.className = "log-time mono";
+      time.textContent = entry.time;
+
+      const dot = document.createElement("div");
+      dot.className = "log-dot";
+      dot.style.background = `var(--color-${tone})`;
+
+      const body = document.createElement("div");
+      body.className = "log-body";
+      const title = document.createElement("b");
+      title.textContent = entry.title;
+      const detail = document.createElement("span");
+      detail.textContent = entry.detail;
+      body.append(title, detail);
+
+      row.append(time, dot, body);
+      alertsList.appendChild(row);
+    });
   }
 
   function updateAlerts(currentAlerts) {

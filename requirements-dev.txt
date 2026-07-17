@@ -1,7 +1,17 @@
 -r requirements.txt
 
-ruff
-pytest
-pytest-cov
-mypy
-interrogate
+# Linting, typing, and docstring coverage
+ruff==0.15.20
+mypy==2.2.0
+interrogate==1.7.0
+
+# Unit / integration testing
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+httpx==0.28.1
+hypothesis==6.156.6
+
+# End-to-end (browser) accessibility/navigation tests
+playwright==1.61.0
+axe-core-python==0.1.0
