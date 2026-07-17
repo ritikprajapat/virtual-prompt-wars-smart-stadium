@@ -14,10 +14,8 @@ import heapq
 
 from app.models.venue import Route, RouteStep
 from app.services.i18n import language_name
-from app.services.llm import GeminiClient, LLMClient
+from app.services.llm import LLMClient
 from app.services.venue_repository import adjacency, node_names
-
-_default_llm: LLMClient = GeminiClient()
 
 
 class NoRouteFoundError(Exception):
@@ -115,7 +113,7 @@ def compute_route(
 
 
 async def phrase_directions(
-    route: Route, language: str, llm: LLMClient | None = None
+    route: Route, language: str, llm: LLMClient
 ) -> str:
     """Ask the LLM to turn a computed route into natural, friendly directions."""
     lang_name = language_name(language)
@@ -128,4 +126,4 @@ async def phrase_directions(
         f"{round(route.total_walk_time_min)} minutes.\n\n"
         f"Route waypoints in order: {step_names}."
     )
-    return await (llm or _default_llm).generate(prompt)
+    return await llm.generate(prompt)

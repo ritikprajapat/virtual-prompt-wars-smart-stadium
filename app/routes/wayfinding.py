@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.middleware.rate_limiter import ai_rate_limit, limiter
-from app.models.requests import WayfindingRequest
+from app.models.requests import WayFindingRequest
 from app.routes.errors import ai_service_unavailable
 from app.services.wayfinding import NoRouteFoundError, compute_route, phrase_directions
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/wayfinding", tags=["wayfinding"])
 @router.post("")
 @limiter.limit(ai_rate_limit)
 async def get_wayfinding(
-    request: Request, response: Response, payload: WayfindingRequest
+    request: Request, response: Response, payload: WayFindingRequest
 ) -> dict[str, object]:
     """Compute a route between two nodes and return AI-phrased directions.
 

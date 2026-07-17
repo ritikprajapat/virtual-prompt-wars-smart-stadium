@@ -22,6 +22,16 @@ class SustainabilityRequest(BaseModel):
     mode: TransportMode
     language: Language = Language.EN
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "start_node_id": "gate_a",
+                "mode": "personal_car",
+                "language": "en",
+            }
+        }
+    }
+
 
 class ImpactComparison(BaseModel):
     """A transparent relative-impact ranking — not a real emissions calculation."""

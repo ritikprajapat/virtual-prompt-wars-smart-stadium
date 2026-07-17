@@ -5,13 +5,11 @@ rather than called directly, so phrasing can be swapped, mocked, or replaced
 with an offline fallback without changing business logic here.
 """
 from app.services.i18n import language_name
-from app.services.llm import GeminiClient, LLMClient
-
-_default_llm: LLMClient = GeminiClient()
+from app.services.llm import LLMClient
 
 
 async def suggest_transport(
-    distance_km: float, language: str, llm: LLMClient | None = None
+    distance_km: float, language: str, llm: LLMClient
 ) -> str:
     """Ask the LLM for a brief transit suggestion based on distance to the venue."""
     lang_name = language_name(language)
@@ -22,4 +20,4 @@ async def suggest_transport(
         f"rideshare, or walking) considering typical match-day traffic "
         f"and sustainability."
     )
-    return await (llm or _default_llm).generate(prompt)
+    return await llm.generate(prompt)

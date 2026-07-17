@@ -1,6 +1,7 @@
 """Tests for the transport suggestion service and route."""
 import pytest
 
+from app.services.llm import GeminiClient
 from app.services.transport import suggest_transport
 from tests.conftest import FakeLLMClient
 
@@ -22,7 +23,7 @@ async def test_suggest_transport_returns_ai_text(monkeypatch):
         return "Take the shuttle."
 
     monkeypatch.setattr("app.services.gemini.ask_gemini", _fake_ask_gemini)
-    result = await suggest_transport(5.0, "en")
+    result = await suggest_transport(5.0, "en", GeminiClient())
     assert result == "Take the shuttle."
     assert "5.0 km" in captured["prompt"]
 
@@ -33,7 +34,7 @@ async def test_suggest_transport_handles_boundary_distances(monkeypatch, distanc
         return "ok"
 
     monkeypatch.setattr("app.services.gemini.ask_gemini", _fake_ask_gemini)
-    assert await suggest_transport(distance, "fr") == "ok"
+    assert await suggest_transport(distance, "fr", GeminiClient()) == "ok"
 
 
 async def test_suggest_transport_propagates_runtime_error(monkeypatch):
@@ -42,7 +43,7 @@ async def test_suggest_transport_propagates_runtime_error(monkeypatch):
 
     monkeypatch.setattr("app.services.gemini.ask_gemini", _boom)
     with pytest.raises(RuntimeError):
-        await suggest_transport(10.0, "en")
+        await suggest_transport(10.0, "en", GeminiClient())
 
 
 def test_transport_endpoint_returns_suggestion(client, mock_gemini):

@@ -6,13 +6,20 @@ client sees the same shared state, independent of who happens to poll. Ticking
 on-request would instead tie the crowd's movement to request volume and give
 each caller a divergent view. The alert phrasing falls back to a static message
 when the AI call fails, so a Gemini outage degrades wording, never the alert.
+
+State lives in this process only: a single simulator instance is intentional
+for the demo, and a multi-worker deployment would need a shared store (e.g.
+Redis) since each worker would otherwise hold independent occupancy.
 """
 import asyncio
+import logging
 import random
 from dataclasses import dataclass, field
 
 from app.services.gemini import ask_gemini
 from app.services.venue_repository import load_venue
+
+logger = logging.getLogger(__name__)
 
 ALERT_THRESHOLD = 0.85
 TICK_SECONDS = 10
@@ -85,17 +92,29 @@ class CrowdSimulator:
         uniform = rng.uniform if rng is not None else random.uniform
         new_alerts: list[CrowdAlert] = []
         for gate in self.gates.values():
+            # Range is skewed positive so gates trend toward filling over time,
+            # modelling pre-match arrivals rather than random walk around a mean.
             delta = int(gate.capacity * uniform(-0.05, 0.12))
             gate.occupancy = max(0, min(gate.capacity, gate.occupancy + delta))
             if gate.occupancy_pct >= ALERT_THRESHOLD:
+                # Edge-triggered: only draft a (costly, AI-generated) alert on the
+                # transition into breach. While a gate stays breached we just
+                # refresh the live percentage rather than re-calling the LLM.
                 if gate.breached:
                     self.alerts[gate.gate_id].occupancy_pct = gate.occupancy_pct
                 else:
                     gate.breached = True
+                    logger.info(
+                        "gate %s breached at %.0f%% capacity",
+                        gate.gate_id,
+                        gate.occupancy_pct * 100,
+                    )
                     alert = await self._build_alert(gate)
                     self.alerts[gate.gate_id] = alert
                     new_alerts.append(alert)
             else:
+                # Dropped back below threshold: clear the breach so the next
+                # crossing is treated as new, and retract the active alert.
                 gate.breached = False
                 self.alerts.pop(gate.gate_id, None)
         return new_alerts

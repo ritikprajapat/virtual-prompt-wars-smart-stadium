@@ -35,18 +35,11 @@
     };
 
     try {
-      const response = await fetch("/api/sustainability/advise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || "Could not get a recommendation. Please try again.");
-      }
-
-      const data = await response.json();
+      const data = await window.MatchDay.postJson(
+        "/api/sustainability/advise",
+        payload,
+        "Could not get a recommendation. Please try again."
+      );
       statusEl.textContent = "Here's our recommendation:";
 
       barsEl.innerHTML = IMPACT_ORDER.map((m, index) => {

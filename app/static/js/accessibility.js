@@ -22,18 +22,11 @@
     };
 
     try {
-      const response = await fetch("/api/accessibility/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || "Could not build a plan. Please try again.");
-      }
-
-      const data = await response.json();
+      const data = await window.MatchDay.postJson(
+        "/api/accessibility/request",
+        payload,
+        "Could not build a plan. Please try again."
+      );
       statusEl.textContent = "Here is your accommodation plan:";
 
       refEl.textContent = "REF " + Math.random().toString(36).slice(2, 7).toUpperCase();

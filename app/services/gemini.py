@@ -17,9 +17,6 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_MODEL_NAME = "gemini-2.0-flash"
-_TIMEOUT_SECONDS = 10
-
 
 @lru_cache
 def _get_client() -> genai.Client:
@@ -37,13 +34,16 @@ async def ask_gemini(prompt: str) -> str:
     message safe to log server-side. Callers should catch this and return a
     generic error to the client rather than the raw exception.
     """
+    settings = get_settings()
     try:
         client = _get_client()
         response = await asyncio.wait_for(
             asyncio.to_thread(
-                client.models.generate_content, model=_MODEL_NAME, contents=prompt
+                client.models.generate_content,
+                model=settings.gemini_model,
+                contents=prompt,
             ),
-            timeout=_TIMEOUT_SECONDS,
+            timeout=settings.gemini_timeout_seconds,
         )
         text: str | None = getattr(response, "text", None)
         if not text:

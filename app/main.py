@@ -6,6 +6,7 @@ exposed on ``app.state`` rather than reached for as module-level globals.
 Routes read those collaborators from ``request.app.state``, which keeps the
 composition root in one place and the request handlers dependency-injected.
 """
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -21,7 +22,8 @@ from starlette.middleware.cors import CORSMiddleware
 from app.config import Settings, get_settings
 from app.middleware.rate_limiter import limiter
 from app.routes import accessibility, crowd, sustainability, transport, wayfinding
-from app.services.crowd import simulator
+from app.services.crowd import CrowdSimulator
+from app.services.crowd import simulator as default_simulator
 from app.services.llm import get_llm_client
 from app.services.repository import JsonVenueRepository, VenueRepository
 
@@ -82,9 +84,29 @@ async def dashboard(request: Request) -> Response:
     return templates.TemplateResponse(request, "dashboard.html", {"gates": venue.gates})
 
 
+async def health(_request: Request) -> dict[str, str]:
+    """Liveness probe for deploy platforms; always cheap and dependency-free."""
+    return {"status": "ok"}
+
+
+def configure_logging(settings: Settings) -> None:
+    """Apply one consistent log format and level for the whole process.
+
+    Called from the composition root so log output (Gemini failures, offline
+    fallback, gate breaches) is timestamped and level-tagged in production
+    rather than emitted with library defaults. ``basicConfig`` is a no-op if
+    logging is already configured, so repeated ``create_app`` calls are safe.
+    """
+    logging.basicConfig(
+        level=settings.log_level.upper(),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
 def create_app(
     settings: Settings | None = None,
     venue_repository: VenueRepository | None = None,
+    simulator: CrowdSimulator | None = None,
 ) -> FastAPI:
     """Build and wire a MatchDay AI application instance.
 
@@ -93,10 +115,14 @@ def create_app(
     ``request.app.state`` rather than importing concrete module-level globals.
     ``venue_repository`` defaults to the file-backed :class:`JsonVenueRepository`
     but any :class:`VenueRepository` can be injected (e.g. an in-memory one in
-    tests) without changing a single handler.
+    tests) without changing a single handler. ``simulator`` likewise defaults to
+    the shared module singleton (intentional for the single-process demo) but is
+    injectable for isolation, completing the composition root.
     """
     settings = settings or get_settings()
+    configure_logging(settings)
     venue_repository = venue_repository or JsonVenueRepository()
+    simulator = simulator if simulator is not None else default_simulator
 
     app = FastAPI(title="MatchDay AI", lifespan=lifespan)
 
@@ -132,6 +158,7 @@ def create_app(
 
     app.get("/")(index)
     app.get("/dashboard")(dashboard)
+    app.get("/health")(health)
 
     return app
 

@@ -130,6 +130,7 @@ per client IP, and return `429` past that limit.
 | `POST` | `/api/sustainability/advise` | `start_node_id, mode, language` | `{ comparison, guidance }` |
 | `GET`  | `/api/crowd/status` | — | `{ gates, alerts }` — live occupancy per gate |
 | `POST` | `/api/crowd/simulate-tick` | — | Advances the crowd simulation by one tick (demo/testing aid) |
+| `GET`  | `/health` | — | `{ "status": "ok" }` — liveness probe for deploy platforms |
 
 Invalid request bodies return `422` with a generic `{"detail": "Invalid request"}` (no field-level
 validation internals are leaked to the client).
@@ -169,6 +170,7 @@ All configuration is environment-driven via `app/config.py` (`pydantic-settings`
 | `GEMINI_API_KEY` | _(empty)_ | Required for any AI-backed route to work. Without it, `ask_gemini` fails closed with a `502`. |
 | `RATE_LIMIT_PER_MINUTE` | `20` | Per-IP rate limit applied to AI-calling routes. |
 | `ALLOWED_ORIGINS` | `http://localhost:8000` | Comma-separated list of allowed CORS origins. |
+| `LLM_OFFLINE_FALLBACK` | `false` | When `true`, AI phrasing failures degrade to a static message instead of a `502`, so features stay usable during a Gemini outage. |
 
 ## Testing
 

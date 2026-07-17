@@ -25,26 +25,30 @@
     };
 
     try {
-      const response = await fetch("/api/wayfinding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || "Could not compute a route. Please try again.");
-      }
-
-      const data = await response.json();
+      const data = await window.MatchDay.postJson(
+        "/api/wayfinding",
+        payload,
+        "Could not compute a route. Please try again."
+      );
       statusEl.textContent = `Route found: ${Math.round(data.route.total_walk_time_min)} min walk.`;
 
       titleEl.textContent = "Route Preview" + (requireStepFree ? " · Step-free" : "");
       distEl.textContent = `${(data.route.total_distance_m / 1000).toFixed(2)} km`;
       timeEl.textContent = `${Math.round(data.route.total_walk_time_min)} min`;
-      stepsEl.innerHTML = data.route.steps
-        .map((step, index) => `<li><span class="stepnum">${index + 1}</span><span>${step.node_name}</span></li>`)
-        .join("");
+
+      // Build steps via DOM + textContent (not innerHTML) so node names are
+      // never interpreted as markup.
+      stepsEl.innerHTML = "";
+      data.route.steps.forEach((step, index) => {
+        const li = document.createElement("li");
+        const num = document.createElement("span");
+        num.className = "stepnum";
+        num.textContent = String(index + 1);
+        const name = document.createElement("span");
+        name.textContent = step.node_name;
+        li.append(num, name);
+        stepsEl.appendChild(li);
+      });
       directionsEl.textContent = data.directions;
       resultEl.classList.add("show");
     } catch (err) {

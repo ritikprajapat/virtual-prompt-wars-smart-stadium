@@ -18,18 +18,11 @@
     };
 
     try {
-      const response = await fetch("/api/transport/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || "Could not fetch a suggestion. Please try again.");
-      }
-
-      const data = await response.json();
+      const data = await window.MatchDay.postJson(
+        "/api/transport/suggest",
+        payload,
+        "Could not fetch a suggestion. Please try again."
+      );
       statusEl.textContent = "Suggestion ready:";
 
       cardsEl.innerHTML = `

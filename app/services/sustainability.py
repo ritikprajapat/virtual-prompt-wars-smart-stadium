@@ -10,10 +10,8 @@ with an offline fallback without changing business logic here.
 from app.models.sustainability import ImpactComparison, TransportMode
 from app.models.venue import Facility
 from app.services.i18n import language_name
-from app.services.llm import GeminiClient, LLMClient
+from app.services.llm import LLMClient
 from app.services.venue_repository import load_venue, node_name
-
-_default_llm: LLMClient = GeminiClient()
 
 _IMPACT_ORDER = [
     TransportMode.WALK_BIKE,
@@ -54,7 +52,7 @@ async def draft_guidance(
     start_node_id: str,
     comparison: ImpactComparison,
     language: str,
-    llm: LLMClient | None = None,
+    llm: LLMClient,
 ) -> str:
     """Ask the LLM for 2-3 friendly sentences nudging toward the lower-impact option."""
     start_name = node_name(start_node_id)
@@ -85,4 +83,4 @@ async def draft_guidance(
         f"touchpoint was given, name it naturally. Keep it under 70 words and avoid "
         f"a lecturing tone."
     )
-    return await (llm or _default_llm).generate(prompt)
+    return await llm.generate(prompt)

@@ -61,7 +61,11 @@ async def test_ask_gemini_wraps_unexpected_errors(monkeypatch):
 async def test_ask_gemini_raises_on_timeout(monkeypatch):
     import time
 
-    monkeypatch.setattr(gemini_module, "_TIMEOUT_SECONDS", 0.05)
+    class _FastTimeoutSettings:
+        gemini_model = "test-model"
+        gemini_timeout_seconds = 0.05
+
+    monkeypatch.setattr(gemini_module, "get_settings", lambda: _FastTimeoutSettings())
 
     def slow(model, contents):
         time.sleep(0.2)
